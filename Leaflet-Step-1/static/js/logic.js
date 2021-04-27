@@ -25,7 +25,7 @@ d3.json(url, function(data){
             return {
                   opacity: 1,
                   fillOpacity: 1,
-                  fillColor: mapColor(feature.properties.mag),
+                  fillColor: mapColor(feature.geometry.coordinates[2]),
                   color: "#000000",
                   radius: mapRadius(feature.properties.mag),
                   stroke: true,
@@ -34,17 +34,17 @@ d3.json(url, function(data){
       }
 
       // Function for color
-      function mapColor(mag) {
+      function mapColor(depth) {
             switch(true) {
-                  case mag > 5:
+                  case depth > 50:
                         return "#ea2c2c";
-                  case mag > 4:
+                  case depth > 40:
                         return "#eaa92c";
-                  case mag > 3:
+                  case depth > 30:
                         return "#d5ea2c";
-                  case mag > 2:
+                  case depth > 20:
                         return "#92ea2c";
-                  case mag > 1:
+                  case depth > 10:
                         return "#2ceabf";
                   default:
                         return "#2c99ea";
@@ -53,9 +53,6 @@ d3.json(url, function(data){
 
       // Function for radius
       function mapRadius(mag) {
-            if (mag === 0) {
-                  return 1
-            }
             return mag * 4
       }
 
@@ -66,29 +63,45 @@ d3.json(url, function(data){
             },
             style: mapStyle,
             onEachFeature: function(feature, layer) {
-                  layer.bindPopup("<h3>" + feature.properties.place + 
-                  "</h3><hr><p>" + "Magnitude: " + feature.properties.mag + "</p>" +
-                  "</h3><hr><p>" + new Date(feature.properties.time) + "</p>")
+                  layer.bindPopup("<h3>" + feature.properties.place + "</h3><hr>" +
+                  "<p>" + "Magnitude: " + feature.properties.mag + "</p>" +
+                  "<p>" + "Depth: " + feature.geometry.coordinates[2] + "</p>" +
+                  "<p>" + new Date(feature.properties.time) + "</p>")
             }
       }).addTo(map)
 
       // Generate Legend
+      function getColor(depth) {
+            return      depth > 50 ? "#ea2c2c" :
+                        depth > 40 ? "#eaa92c" :
+                        depth > 30 ? "#d5ea2c" :
+                        depth > 20 ? "#92ea2c" :
+                        depth > 10 ? "#2ceabf" :
+                        depth > 00 ? "#2c99ea" :
+                        "#922AFA"
+      }
+      
       var legend = L.control({
-            position: "bottomright"
+            position: "bottomleft",
       })
 
       legend.onAdd = function() {
-            var div = L.DomUtil.create("div", "info-legend")
-            var grades = [0, 1, 2, 3, 4, ,5]
-            var colors = ["#2c99ea", "#2ceabf", "#92ea2c", "#d5ea2c","#eaa92c", "#ea2c2c"]
+            var div = L.DomUtil.create("div", "info legend"),
+            depth = [0, 10, 20, 30, 40, 50],
+            labels =[]
             
             // Loop through colors to add to label
-            for (var i=0; i < grades.length; i++) {
-                  div.innerHTML +=
-                  "<i style='background: " + colors[i] + "'></i> " +
-                  grades[i] + (grades[i + 1] ? "&ndash;" + grades[i + 1] + "<br>" : "+");
+            for (var i=0; i < depth.length; i++) {
+                  from = depth[i]
+                  to = depth[i + 1]
+                  
+                  labels.push(
+                        '<i style="background:' + getColor(from + 1) + '">&nbsp&nbsp&nbsp&nbsp&nbsp</i> ' +
+                        from + (to ? '&ndash;' + to : '+'));
             }
-            return div
+
+            div.innerHTML = labels.join('<br>');
+            return div;
       }
 
       legend.addTo(map)
